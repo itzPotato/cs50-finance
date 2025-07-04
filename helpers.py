@@ -1,4 +1,5 @@
 import requests
+import os
 
 from flask import redirect, render_template, session
 from functools import wraps
@@ -45,24 +46,26 @@ def login_required(f):
     return decorated_function
 
 
-def lookup(symbol):
-    """Look up quote for symbol."""
-    url = f"https://finance.cs50.io/quote?symbol={symbol.upper()}"
-    try:
-        response = requests.get(url)
-        response.raise_for_status()  # Raise an error for HTTP error responses
-        quote_data = response.json()
-        return {
-            "name": quote_data["companyName"],
-            "price": quote_data["latestPrice"],
-            "symbol": symbol.upper()
-        }
-    except requests.RequestException as e:
-        print(f"Request error: {e}")
-    except (KeyError, ValueError) as e:
-        print(f"Data parsing error: {e}")
-    return None
+import requests
 
+def lookup(symbol):
+    try:
+        api_key = os.environ.get("API_KEY")  # or paste it directly for testing
+        api_key = "701bb0c81c6b43aca76f010f290b7eac"
+        url = f"https://api.twelvedata.com/quote?symbol={symbol}&apikey={api_key}"
+        response = requests.get(url)
+        data = response.json()
+
+        if "price" not in data:
+            return None
+
+        return {
+            "name": data.get("name"),
+            "symbol": data.get("symbol"),
+            "price": float(data.get("price"))
+        }
+    except Exception:
+        return None
 
 def usd(value):
     """Format value as USD."""
